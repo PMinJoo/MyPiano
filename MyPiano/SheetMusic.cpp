@@ -14,7 +14,7 @@ Mat GS_threshold(Mat src_image, double thresh, int threshold_type) {
 
 int main() {
 	Mat input_img = imread("비행기.png"); //원본 영상
-
+	//가나다라마바사
 	//그레이스케일 영상
 	Mat img_gray = Mat(input_img.rows, input_img.cols, CV_8UC1); 
 	for (int y = 0; y < input_img.rows; y++) {
