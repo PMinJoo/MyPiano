@@ -55,17 +55,70 @@ int main() {
 	}
 	line[lineNum] = input_img.rows - 1;
 
-	int interval_line = line[2] - line[1]; //선 간격
+
+	//선 사이 평균 간격 구하기
+	bool first_interval = true;
+	int first_interval_loc = 0; //첫 번째 간격
+	int sum_line_interval = 0; //간격 합(평균을 구하기 위함)
+
+	for (int i = 2; i < lineNum; i++) {
+		int tmp_interval = line[i] - line[i - 1]; //선 사이 간격 계산
+
+		if (tmp_interval != 1) { //간격이 1이 아니면
+			if (first_interval == true) {
+				first_interval_loc = tmp_interval;
+				first_interval = false;
+			}
+
+			if (first_interval == false && tmp_interval > first_interval_loc * 2) break; //다음 묶음의 오선이면 break
+
+			sum_line_interval += tmp_interval;
+		}
+	}
+	int avg_interval = sum_line_interval / 4;
+	cout << "평균 간격 : " << avg_interval << endl;
+
+
+
+	//오선 출력
+	Mat line_img = Mat(input_img.rows, input_img.cols, CV_8UC1);
+	int line_count = 0;
+	for (int y = 0; y < input_img.rows; y++) {
+		uchar* pointer_binary = img_binary.ptr<uchar>(y);
+		uchar* pointer_line = line_img.ptr<uchar>(y);
+		if (line_count < lineNum && y == line[line_count]) {
+			line_count++;
+			for (int x = 0; x < input_img.cols; x++) {
+				pointer_line[x] = pointer_binary[x];
+			}
+		}
+		else {
+			for (int x = 0; x < input_img.cols; x++) {
+				switch (pointer_binary[x]) {
+				case 0:
+					pointer_line[x] = 255 + pointer_binary[x];
+					break;
+				case 255:
+					pointer_line[x] = pointer_binary[x];
+					break;
+				}
+			}
+		}
+	}
+
 
 	//오선 제거
 	Mat img_new = Mat(input_img.rows, input_img.cols, CV_8UC1);
 	int lineTmp = 0;
+	int interval_count_tmp = 0;
 	int f_tmp = 0;
 	for (int y = 0; y < input_img.rows; y++) {
 		uchar* pointer_line = img_new.ptr<uchar>(y);
 		uchar* pointer_binary = img_binary.ptr<uchar>(y);
-		f_tmp = lineTmp % 5;
-		if (f_tmp==1 && line[lineTmp-1] + interval_line+3 < y && y < line[lineTmp]- interval_line+3) {
+		f_tmp = interval_count_tmp % 5;
+
+
+		if (f_tmp==1 && line[lineTmp-1] + avg_interval+avg_interval/2 < y && y < line[lineTmp]- avg_interval+ avg_interval/2) {
 			for (int x = 0; x < input_img.cols; x++) {
 				switch (pointer_binary[x]) {
 				case 0:
@@ -82,6 +135,10 @@ int main() {
 				pointer_line[x] = 255 + pointer_binary[x];
 			}
 			lineTmp++;
+			interval_count_tmp++;
+			if (line[lineTmp] - line[lineTmp - 1] == 1) {
+				interval_count_tmp--;
+			}
 		}
 		else {
 			for (int x = 0; x < input_img.cols; x++) {
@@ -103,7 +160,8 @@ int main() {
 	erode(img_new, img_new, mask);
 	
 
-	imshow("result", img_binary);
+	imshow("binary", img_binary);
+	imshow("line", line_img);
 	imshow("new", img_new);
 	waitKey(0);
 	return 0;
