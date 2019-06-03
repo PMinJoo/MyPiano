@@ -164,7 +164,7 @@ int main() {
 	erode(img_new, img_new, mask);
 	erode(img_new, img_new, mask);
 	erode(img_new, img_new, mask);
-	erode(img_new, img_new, mask);
+	erode(img_new, img_new, mask); //학교종
 	
 
 
@@ -254,6 +254,11 @@ int main() {
 				case 0: cout << "레"; point_string[x] = "레"; break;
 				}
 			}
+			else if (final_point_arr[x].y == line[l] +avg_interval + 4 || final_point_arr[x].y == line[l] + avg_interval + 5 || final_point_arr[x].y == line[l] + avg_interval + 3) {
+				if (l % 5 == 0) {
+					cout << "도"; point_string[x] = "도";
+				}
+			}
 		}
 		cout << endl;
 	}
@@ -264,7 +269,7 @@ int main() {
 	cv::imshow("binary", img_binary);
 	cv::imshow("line", line_img);
 	cv::imshow("new", img_new);
-	cv::imshow("reeeesullllt", dstImage);
+	//cv::imshow("reeeesullllt", dstImage);
 
 	cv::waitKey(0);
 	return 0;
