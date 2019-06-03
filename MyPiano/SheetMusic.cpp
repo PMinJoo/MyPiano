@@ -1,7 +1,10 @@
 #include <opencv2/opencv.hpp>
+#include <iostream>
+#include <string>
 
 using namespace cv;
 using namespace std;
+
 
 Mat GS_threshold(Mat src_image, double thresh, int threshold_type) {
 	double max_value = 255.0;
@@ -14,7 +17,6 @@ Mat GS_threshold(Mat src_image, double thresh, int threshold_type) {
 
 int main() {
 	Mat input_img = imread("비행기.png"); //원본 영상
-	//가나다라마바사
 	//그레이스케일 영상
 	Mat img_gray = Mat(input_img.rows, input_img.cols, CV_8UC1); 
 	for (int y = 0; y < input_img.rows; y++) {
@@ -70,7 +72,9 @@ int main() {
 				first_interval = false;
 			}
 
-			if (first_interval == false && tmp_interval > first_interval_loc * 2) break; //다음 묶음의 오선이면 break
+			if (first_interval == false && tmp_interval > first_interval_loc * 2) {
+				break; //다음 묶음의 오선이면 break
+			}
 
 			sum_line_interval += tmp_interval;
 		}
@@ -91,6 +95,7 @@ int main() {
 			for (int x = 0; x < input_img.cols; x++) {
 				pointer_line[x] = pointer_binary[x];
 			}
+			cout << y << endl;
 		}
 		else {
 			for (int x = 0; x < input_img.cols; x++) {
@@ -147,6 +152,8 @@ int main() {
 		}
 	}
 
+
+	//노이즈 제거
 	Mat mask = getStructuringElement(CV_SHAPE_RECT, Size(2, 2));
 	erode(img_new, img_new, mask);
 	dilate(img_new, img_new, mask);
@@ -160,10 +167,106 @@ int main() {
 	erode(img_new, img_new, mask);
 	
 
-	imshow("binary", img_binary);
-	imshow("line", line_img);
-	imshow("new", img_new);
-	waitKey(0);
+
+	Mat dstImage;
+	Mat edge;
+	Canny(img_new, edge, 50, 150); //edge 검출
+	bitwise_not(edge, edge); //반전
+
+	//edge 강조
+	vector<vector<Point>> contours;
+	findContours(edge.clone(), contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+	drawContours(edge, contours, -1, Scalar(0, 0, 0), 1);
+	cvtColor(edge, dstImage, COLOR_GRAY2BGR);
+
+	Mat labels, stats, centroids;
+	int nlabels = connectedComponentsWithStats(edge, labels, stats, centroids, 8, CV_32S);
+	Point point_arr[999]; //추출한 음 좌표
+	string point_string[999]; //추출한 음
+	//int Point_position[999];
+	for (int i = 2; i < nlabels; i++) {
+		int area = stats.at<int>(i, CC_STAT_AREA);
+		int center_x = centroids.at<double>(i, 0);
+		int center_y = centroids.at<double>(i, 1);
+		int left = stats.at<int>(i, CC_STAT_LEFT);
+		int top = stats.at<int>(i, CC_STAT_TOP);
+		int width = stats.at<int>(i, CC_STAT_WIDTH);
+		int height = stats.at<int>(i, CC_STAT_HEIGHT);
+
+		rectangle(dstImage, Point(left, top), Point(left + width, top + height), Scalar(0, 0, 255), 1);
+		putText(dstImage, to_string(i), Point(left + 20, top + 20), FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 0, 0), 2);
+		
+		//cout << "음 추출 : " << i << " - (" << center_x << ", " << center_y << ")";
+		point_arr[i] = Point(center_x, center_y);
+	}
+
+
+
+	Point final_point_arr[999]; //음 좌표
+	final_point_arr[0].x = 0;
+	int temp_point_x = final_point_arr[0].x;
+	string final_point_string[999]; //음
+	int prv_temp_x = 0;
+	int temp_x = 5;
+	int temp_y = 5;
+	Point x_min;
+	x_min.x = input_img.cols;
+	for (int x = 2; x < nlabels; x++) {
+		if (point_arr[x].y > line[temp_x]+4 + avg_interval * 2) {
+			temp_x += 5;
+			temp_y += 5;
+			prv_temp_x += 5;
+			temp_point_x = 0;
+		}
+		
+		x_min.x = input_img.cols;
+		for (int y = 2; y < nlabels; y++) {
+			if (temp_point_x < point_arr[y].x && point_arr[y].x < x_min.x && line[prv_temp_x] + 4 + avg_interval * 2 < point_arr[y].y && point_arr[y].y <= line[temp_x] + 4 + avg_interval * 2) {
+				x_min = point_arr[y];
+			}
+			else if (point_arr[y].y > line[temp_y] + 4 + avg_interval * 2) {
+				
+				break;
+			}
+		}
+		final_point_arr[x] = x_min;
+		temp_point_x = final_point_arr[x].x;
+		cout << "(" << final_point_arr[x].x << ", " << final_point_arr[x].y << ")";
+
+
+
+		for (int l = 1; l < lineNum; l++) {
+			if (final_point_arr[x].y == line[l] + 4 || final_point_arr[x].y == line[l] + 5 || final_point_arr[x].y == line[l] + 3) {
+				switch (l % 5) {
+				case 1: cout << "파"; point_string[x] = "파"; break;
+				case 2: cout << "레"; point_string[x] = "레"; break;
+				case 3: cout << "시"; point_string[x] = "시"; break;
+				case 4: cout << "솔"; point_string[x] = "솔"; break;
+				case 0: cout << "미"; point_string[x] = "미"; break;
+				}
+			}
+			else if (final_point_arr[x].y == line[l] + avg_interval / 2 + 4 || final_point_arr[x].y == line[l] + avg_interval / 2 + 5 || final_point_arr[x].y == line[l] + avg_interval / 2 + 3) {
+				switch (l % 5) {
+				case 1: cout << "미"; point_string[x] = "미"; break;
+				case 2: cout << "도"; point_string[x] = "도"; break;
+				case 3: cout << "라"; point_string[x] = "라"; break;
+				case 4: cout << "파"; point_string[x] = "파"; break;
+				case 0: cout << "레"; point_string[x] = "레"; break;
+				}
+			}
+		}
+		cout << endl;
+	}
+
+
+
+
+	cv::imshow("binary", img_binary);
+	cv::imshow("line", line_img);
+	cv::imshow("new", img_new);
+	cv::imshow("reeeesullllt", dstImage);
+
+	cv::waitKey(0);
 	return 0;
 
 }
