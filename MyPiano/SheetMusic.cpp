@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <string>
+#include <fstream>
 
 using namespace cv;
 using namespace std;
@@ -238,30 +239,38 @@ int main() {
 		for (int l = 1; l < lineNum; l++) {
 			if (final_point_arr[x].y == line[l] + 4 || final_point_arr[x].y == line[l] + 5 || final_point_arr[x].y == line[l] + 3) {
 				switch (l % 5) {
-				case 1: cout << "파"; point_string[x] = "파"; break;
-				case 2: cout << "레"; point_string[x] = "레"; break;
-				case 3: cout << "시"; point_string[x] = "시"; break;
-				case 4: cout << "솔"; point_string[x] = "솔"; break;
-				case 0: cout << "미"; point_string[x] = "미"; break;
+				case 1: cout << "파"; point_string[x] = "'"; break;
+				case 2: cout << "레"; point_string[x] = "l"; break;
+				case 3: cout << "시"; point_string[x] = "j"; break;
+				case 4: cout << "솔"; point_string[x] = "g"; break;
+				case 0: cout << "미"; point_string[x] = "d"; break;
 				}
 			}
 			else if (final_point_arr[x].y == line[l] + avg_interval / 2 + 4 || final_point_arr[x].y == line[l] + avg_interval / 2 + 5 || final_point_arr[x].y == line[l] + avg_interval / 2 + 3) {
 				switch (l % 5) {
-				case 1: cout << "미"; point_string[x] = "미"; break;
-				case 2: cout << "도"; point_string[x] = "도"; break;
-				case 3: cout << "라"; point_string[x] = "라"; break;
-				case 4: cout << "파"; point_string[x] = "파"; break;
-				case 0: cout << "레"; point_string[x] = "레"; break;
+				case 1: cout << "미"; point_string[x] = ";"; break;
+				case 2: cout << "도"; point_string[x] = "k"; break;
+				case 3: cout << "라"; point_string[x] = "h"; break;
+				case 4: cout << "파"; point_string[x] = "f"; break;
+				case 0: cout << "레"; point_string[x] = "s"; break;
 				}
 			}
 			else if (final_point_arr[x].y == line[l] +avg_interval + 4 || final_point_arr[x].y == line[l] + avg_interval + 5 || final_point_arr[x].y == line[l] + avg_interval + 3) {
 				if (l % 5 == 0) {
-					cout << "도"; point_string[x] = "도";
+					cout << "도"; point_string[x] = "a";
 				}
 			}
 		}
 		cout << endl;
 	}
+
+	ofstream out("output.txt");
+	out << nlabels - 1 - 2 << endl;
+	for (int x = 2; x < nlabels-1; x++) {
+		out << point_string[x] << "250" << endl;
+	}
+	out << endl << "0";
+	out.close();
 
 
 
