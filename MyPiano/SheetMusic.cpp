@@ -268,7 +268,7 @@ int main() {
 		cout << endl;
 	}
 
-	ofstream out("output.txt");
+	ofstream out("1.txt");
 	out << nlabels - 1 - 2 << endl;
 	for (int x = 2; x < nlabels-1; x++) {
 		out << point_string[x] << "250" << endl;
@@ -276,18 +276,19 @@ int main() {
 	out << endl << "0";
 	out.close();
 
-	ofstream out("output2.txt");
+	ofstream out2("2.txt");
 	interval_position_count = 0;
-	out << nlabels - 1 - 2 << endl;
+	out2 << nlabels - 1 - 2 << endl;
 	for (int x = 2; x < nlabels - 1; x++) {
-		out << point_string[x] << "250" << endl;
+		out2 << point_string[x] << "250" << endl;
 		if (x == interval_position[interval_position_count]) {
-			cout << endl;
+			out2 << endl;
 			interval_position_count++;
 		}
 	}
-	out << endl << "0";
-	out.close();
+	out2 << endl << "0";
+	
+	out2.close();
 
 
 
