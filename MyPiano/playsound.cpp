@@ -52,6 +52,8 @@ void main()
 		playsound(note);
 		//Release();
 	}*/
+	//record();
+
 	replay();
 
 	Release();
@@ -66,18 +68,18 @@ void init()
 	if (result != FMOD_OK) printf("시스템 초기화 실패");
 
 	msystem->createSound("sound/25.wav", FMOD_LOOP_OFF, 0, &msound[0]);//소리생성
-	msystem->createSound("sound/26.wav", FMOD_LOOP_OFF, 0, &msound[1]);//파일명, 반복 여부, 확장 정보, 사운드 파일과 연결
-	msystem->createSound("sound/27.wav", FMOD_LOOP_OFF, 0, &msound[2]);
-	msystem->createSound("sound/28.wav", FMOD_LOOP_OFF, 0, &msound[3]);
-	msystem->createSound("sound/29.wav", FMOD_LOOP_OFF, 0, &msound[4]);
-	msystem->createSound("sound/30.wav", FMOD_LOOP_OFF, 0, &msound[5]);
-	msystem->createSound("sound/31.wav", FMOD_LOOP_OFF, 0, &msound[6]);
-	msystem->createSound("sound/32.wav", FMOD_LOOP_OFF, 0, &msound[7]);
-	msystem->createSound("sound/33.wav", FMOD_LOOP_OFF, 0, &msound[8]);
-	msystem->createSound("sound/34.wav", FMOD_LOOP_OFF, 0, &msound[9]);
-	msystem->createSound("sound/35.wav", FMOD_LOOP_OFF, 0, &msound[10]);
-	msystem->createSound("sound/36.wav", FMOD_LOOP_OFF, 0, &msound[11]);
-	msystem->createSound("sound/37.wav", FMOD_LOOP_OFF, 0, &msound[12]);
+	msystem->createSound("sound/27.wav", FMOD_LOOP_OFF, 0, &msound[1]);//파일명, 반복 여부, 확장 정보, 사운드 파일과 연결
+	msystem->createSound("sound/29.wav", FMOD_LOOP_OFF, 0, &msound[2]);
+	msystem->createSound("sound/30.wav", FMOD_LOOP_OFF, 0, &msound[3]);
+	msystem->createSound("sound/32.wav", FMOD_LOOP_OFF, 0, &msound[4]);
+	msystem->createSound("sound/34.wav", FMOD_LOOP_OFF, 0, &msound[5]);
+	msystem->createSound("sound/36.wav", FMOD_LOOP_OFF, 0, &msound[6]);
+	msystem->createSound("sound/37.wav", FMOD_LOOP_OFF, 0, &msound[7]);
+	msystem->createSound("sound/26.wav", FMOD_LOOP_OFF, 0, &msound[8]);
+	msystem->createSound("sound/28.wav", FMOD_LOOP_OFF, 0, &msound[9]);
+	msystem->createSound("sound/31.wav", FMOD_LOOP_OFF, 0, &msound[10]);
+	msystem->createSound("sound/33.wav", FMOD_LOOP_OFF, 0, &msound[11]);
+	msystem->createSound("sound/35.wav", FMOD_LOOP_OFF, 0, &msound[12]);
 }
 
 void playsound(char note)//소리 출력
@@ -108,19 +110,19 @@ void playsound(char note)//소리 출력
 	case 'k':
 		msystem->playSound(msound[7], 0, false, NULL);
 		break;
-	case 'y':
+	case 'w':
 		msystem->playSound(msound[8], 0, false, NULL);
 		break;
-	case 'l':
+	case 'e':
 		msystem->playSound(msound[9], 0, false, NULL);
 		break;
-	case 'w':
+	case 't':
 		msystem->playSound(msound[10], 0, false, NULL);
 		break;
-	case 'e':
+	case 'y':
 		msystem->playSound(msound[11], 0, false, NULL);
 		break;
-	case 'r':
+	case 'u':
 		msystem->playSound(msound[12], 0, false, NULL);
 		break;
 	}
@@ -153,7 +155,7 @@ void record()
 
 		if (current_ix > 0)
 		{
-			length[current_ix - 1] = elapsed_time;
+			length[current_ix - 1] = elapsed_time;//재생 시간 저장
 			printf("%dms ", elapsed_time);
 		}
 
@@ -213,5 +215,10 @@ void replay()
 	printf("\n\n");
 	fin.close();
 	return;
+}
+/*
+void practice()
+{
 
 }
+*/
