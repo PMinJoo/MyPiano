@@ -18,5 +18,11 @@
     <ClCompile Include="SheetMusic.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="sound.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="playsoundcpp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
