@@ -212,12 +212,16 @@ int main() {
 	int temp_y = 5;
 	Point x_min;
 	x_min.x = input_img.cols;
+	int interval_position[99];
+	int interval_position_count = 0;
 	for (int x = 2; x < nlabels; x++) {
 		if (point_arr[x].y > line[temp_x]+4 + avg_interval * 2) {
 			temp_x += 5;
 			temp_y += 5;
 			prv_temp_x += 5;
 			temp_point_x = 0;
+			interval_position[interval_position_count] = x - 1;
+			interval_position_count++;
 		}
 		
 		x_min.x = input_img.cols;
@@ -272,13 +276,25 @@ int main() {
 	out << endl << "0";
 	out.close();
 
+	ofstream out("output2.txt");
+	interval_position_count = 0;
+	out << nlabels - 1 - 2 << endl;
+	for (int x = 2; x < nlabels - 1; x++) {
+		out << point_string[x] << "250" << endl;
+		if (x == interval_position[interval_position_count]) {
+			cout << endl;
+			interval_position_count++;
+		}
+	}
+	out << endl << "0";
+	out.close();
 
 
 
 	cv::imshow("binary", img_binary);
 	cv::imshow("line", line_img);
 	cv::imshow("new", img_new);
-	//cv::imshow("reeeesullllt", dstImage);
+	cv::imshow("reeeesullllt", dstImage);
 
 	cv::waitKey(0);
 	return 0;
