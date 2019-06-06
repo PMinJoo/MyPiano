@@ -21,5 +21,11 @@
     <ClCompile Include="playsound.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="temp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
