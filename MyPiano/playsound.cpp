@@ -1,12 +1,4 @@
-#include <iostream>
-#include <conio.h>
-#include <fmod.hpp>
-#include <iostream>
-#include <fstream>
-#include <ctime>
-#include <windows.h>
-
-#pragma comment (lib, "winmm.lib")
+#include "playsound.h"
 
 #define NUM_MAX_NOTES 1000
 
@@ -24,19 +16,22 @@ int current_ix = 0;//파일을 다루기 위한 변수
 char notes[NUM_MAX_NOTES];
 int length[NUM_MAX_NOTES];
 
+PlayNote::PlayNote()
+{
 
-void init();//FMOD 시스템 초기화, 사운드 생성
-void playsound(char note);//생성된 사운드 출력
-void Release();//FMOD로 할당된 메모리 해제
-void record();// 입력 및 텍스트 파일 생성용 
-void play();//전체곡 재생 모드
-void free_play();//자유 연주 모드
-void practice_play();
+}
+
+PlayNote::~PlayNote()
+{
+
+}
 
 void main()
 {
 	char note = NULL;
-	init();
+	PlayNote test;
+
+	test.init();
 
 	for (int n = 0; n < NUM_MAX_NOTES; n++)//파일 변수 초기화
 	{
@@ -63,12 +58,15 @@ void main()
 
 	//practice_play();
 	
-	Release();
+	//Release();
 
 	while (1);
 }
-//Fmod함수의 초기화
-void init()
+/*************************************************************************
+	FMOD 함수 초기화
+	sound생성 부분
+**************************************************************************/
+void PlayNote::init()
 {
 	result = FMOD::System_Create(&msystem);//시스템 생성
 	if (result != FMOD_OK) printf("시스템 생성 실패");
@@ -91,7 +89,13 @@ void init()
 	msystem->createSound("sound/35.wav", FMOD_LOOP_OFF, 0, &msound[12]);
 }
 
-void playsound(char note)//소리 출력
+
+/****************************************************************************
+	소리를 출력하는 부분
+	FMOD의 channel을 이용해 소리를 겹치게 출력 할 수 있다.
+**************************************************************************/
+
+void PlayNote::playsound(char note)
 {
 	switch (note)
 	{
@@ -138,16 +142,16 @@ void playsound(char note)//소리 출력
 
 }
 
-void Release()
+void PlayNote::Release()
 {
 	msystem->release();
 }
 
-/*
+/*****************************************************************
 	입력한 소리들을 녹음 하는 부분
 	파일을 테스트 하기위해 임시로 만듬
-*/
-void record()
+*****************************************************************/
+void PlayNote:: record()
 {
 	ofstream outFile("output.txt");
 
@@ -195,7 +199,7 @@ void record()
 /***********************************************************************************
 	전체 곡을 재생한다.
 ************************************************************************************/
-void play()
+void PlayNote::play()
 {
 
 	char *rep_notes = NULL;//전체 노트의 값
@@ -237,7 +241,7 @@ void play()
 /******************************************************************************
 	자유연주
 *******************************************************************************/
-void free_play()
+void PlayNote::free_play()
 {
 	char input_character;
 	while (true)
@@ -255,7 +259,7 @@ void free_play()
 	반복연주
 *******************************************************************************/
 
-void practice_play()
+void PlayNote::practice_play()
 {
 	char *rep_notes = NULL;//전체 노트의 값
 	int *rep_length = NULL;//노트의 개수
@@ -284,8 +288,8 @@ void practice_play()
 
 
 }
-
-void parser(char* note, int note_size)
+/*
+void PlayNote::parser(char* note, int note_size)
 {
 	char test[4][10];
 	for (int i = 0; i < note_size; i++)
@@ -312,3 +316,4 @@ char* note_save(int size)
 	}
 	return save;
 }
+*/
