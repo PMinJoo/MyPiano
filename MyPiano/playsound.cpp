@@ -23,14 +23,15 @@ void *extradriverdate(nullptr);
 int current_ix = 0;//파일을 다루기 위한 변수
 char notes[NUM_MAX_NOTES];
 int length[NUM_MAX_NOTES];
-char *rep_notes = NULL;//리플레이시 동적할당을 사용하기 위해서
-int *rep_length = NULL;//리플레이시 동적할당을 사용하기 위해서
+
 
 void init();//FMOD 시스템 초기화, 사운드 생성
 void playsound(char note);//생성된 사운드 출력
 void Release();//FMOD로 할당된 메모리 해제
-void record();
-void replay();
+void record();// 입력 및 텍스트 파일 생성용 
+void play();//전체곡 재생 모드
+void free_play();//자유 연주 모드
+void practice_play();
 
 void main()
 {
@@ -54,9 +55,17 @@ void main()
 	}*/
 	//record();
 
-	replay();
+	//replay();
 
+	//play();
+
+	//free_play();
+
+	//practice_play();
+	
 	Release();
+
+	while (1);
 }
 //Fmod함수의 초기화
 void init()
@@ -140,7 +149,7 @@ void Release()
 */
 void record()
 {
-	ofstream outFile("record.txt");
+	ofstream outFile("output.txt");
 
 	int time_temp = (int)timeGetTime();//winmm.lib
 	char input_character;
@@ -177,18 +186,23 @@ void record()
 		}
 		playsound(input_character);
 
-		msystem->update();//fmod의 방식때문에 사용해야하는 함수
-		//사용해보지 않고 직접 써보니 중간에 음이 나오지 않는 구간이 생겨버림
-
+		msystem->update();
 	}
 	outFile.close();
-	
 }
 
-void replay()
+
+/***********************************************************************************
+	전체 곡을 재생한다.
+************************************************************************************/
+void play()
 {
+
+	char *rep_notes = NULL;//전체 노트의 값
+	int *rep_length = NULL;//노트의 개수
+
 	ifstream fin;
-	fin.open("record.txt");
+	fin.open("1.txt");
 
 	int re_notes;//current_ix의 값
 	char re_key;//저장된 키의 값
@@ -196,7 +210,7 @@ void replay()
 	
 	fin >> re_notes;
 	current_ix = re_notes;
-	rep_notes = (char*)malloc(sizeof(char)*re_notes);
+	rep_notes = (char*)malloc(sizeof(char)*re_notes);//전체 노트의 개수 만큼 할당
 	rep_length = (int*)malloc(sizeof(int)*re_notes);
 
 	for (int i = 0; i < re_notes; i++)//저장된 키 개수만큼 for문을 반복
@@ -204,6 +218,10 @@ void replay()
 		fin >> re_key >>re_length;//키 값과 음의 길이를 저장함
 		rep_notes[i] = re_key;//저장된 키의 값을 배열에 저장
 		rep_length[i] = re_length;//저장된 음의 길이를 배열에 저장
+		if (rep_length[i] == '\n')
+		{
+			re_notes++;
+		}
 		playsound(rep_notes[i]);//사운드 재생
 		Sleep(rep_length[i]);//재생 길이
 		if (i != re_notes - 1)
@@ -216,9 +234,81 @@ void replay()
 	fin.close();
 	return;
 }
-/*
-void practice()
+/******************************************************************************
+	자유연주
+*******************************************************************************/
+void free_play()
 {
+	char input_character;
+	while (true)
+	{
+		input_character = (char)_getch();
+
+		playsound(input_character);
+
+		msystem->update();
+	}
 
 }
-*/
+
+/******************************************************************************
+	반복연주
+*******************************************************************************/
+
+void practice_play()
+{
+	char *rep_notes = NULL;//전체 노트의 값
+	int *rep_length = NULL;//노트의 개수
+
+	ifstream fin;
+	fin.open("2.txt");
+
+	int re_notes;//current_ix의 값
+	char re_key;//저장된 키의 값
+	int re_length;//저장된 음의 길이
+
+	fin >> re_notes;
+	current_ix = re_notes;
+	rep_notes = (char*)malloc(sizeof(char)*re_notes);//전체 노트의 개수 만큼 할당
+	rep_length = (int*)malloc(sizeof(int)*re_notes);
+
+	for (int i = 0; i < re_notes; i++)//저장된 키 개수만큼 for문을 반복
+	{
+		fin >> re_key >> re_length;//키 값과 음의 길이를 저장함
+		rep_notes[i] = re_key;//저장된 키의 값을 배열에 저장
+		rep_length[i] = re_length;//저장된 음의 길이를 배열에 저장
+
+		printf("%c\n", rep_notes[i]);
+	}
+
+
+
+}
+
+void parser(char* note, int note_size)
+{
+	char test[4][10];
+	for (int i = 0; i < note_size; i++)
+	{
+		
+	}
+
+}
+
+char* note_save(int size)
+{
+	char input_character;
+	char* save = (char*)malloc(sizeof(char)*size);
+
+	for(int i = 0; i < size; i++)
+	{
+		input_character = (char)_getch();
+
+		save[i] = input_character;
+
+		playsound(input_character);
+
+		msystem->update();
+	}
+	return save;
+}
