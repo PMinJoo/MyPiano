@@ -76,7 +76,7 @@ void output_part(int interval_position_count, string point_string[], int interva
 	for (int x = 2; x < nlabels - 1; x++) {
 		out2 << point_string[x] << "250" << endl;
 		if (x == interval_position[interval_position_count]) {
-			out2 << endl;
+			out2 << 'x' <<endl;
 			interval_position_count++;
 		}
 	}

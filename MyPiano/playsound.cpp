@@ -6,9 +6,11 @@ using namespace std;
 using namespace FMOD;
 
 System *msystem(nullptr);//시스템 선언
-Sound* msound[12];//사용할 사운드의 개수만큼 배열을 선언
-Channel* mchannel[12];//사용할 채널
+Sound* msound[15];//사용할 사운드의 개수만큼 배열을 선언
+Channel* mchannel[15];//사용할 채널
 FMOD_RESULT result;//오류 확인
+
+
 
 void *extradriverdate(nullptr);
 
@@ -54,14 +56,15 @@ void main()
 
 	//play();
 
-	//free_play();
+	//test.free_play();
 
-	//practice_play();
+	test.practice_play();
 	
 	//Release();
 
 	while (1);
 }
+
 /*************************************************************************
 	FMOD 함수 초기화
 	sound생성 부분
@@ -87,6 +90,8 @@ void PlayNote::init()
 	msystem->createSound("sound/31.wav", FMOD_LOOP_OFF, 0, &msound[10]);
 	msystem->createSound("sound/33.wav", FMOD_LOOP_OFF, 0, &msound[11]);
 	msystem->createSound("sound/35.wav", FMOD_LOOP_OFF, 0, &msound[12]);
+	msystem->createSound("o.wav", FMOD_LOOP_OFF, 0, &msound[13]);
+	msystem->createSound("x.wav", FMOD_LOOP_OFF, 0, &msound[14]);
 }
 
 
@@ -276,14 +281,94 @@ void PlayNote::practice_play()
 	rep_notes = (char*)malloc(sizeof(char)*re_notes);//전체 노트의 개수 만큼 할당
 	rep_length = (int*)malloc(sizeof(int)*re_notes);
 
+	int size = re_notes;
+	int line = 0;
+	int line_note_size = 0;
 	for (int i = 0; i < re_notes; i++)//저장된 키 개수만큼 for문을 반복
 	{
 		fin >> re_key >> re_length;//키 값과 음의 길이를 저장함
 		rep_notes[i] = re_key;//저장된 키의 값을 배열에 저장
 		rep_length[i] = re_length;//저장된 음의 길이를 배열에 저장
 
-		printf("%c\n", rep_notes[i]);
+		if (rep_notes[i] == 'x')
+		{
+			size++;//단락의 개수만큼 사이즈 증가
+			line++;//단락의 수를 센다.
+		}
+		//printf("%c\n", rep_notes[i]);
 	}
+
+	int* line_place= (int*)malloc(sizeof(int)*line);
+	int temp = 0;
+	for (int i = 0; i < size; i++)
+	{
+		if (rep_notes[i] == 'x')
+		{
+			line_place[temp++] = i;
+		}
+	}
+	
+	int* line_note = (int*)malloc(sizeof(int)*line);
+	int buf = 0;
+	for (int i = 0; i < line; i++)
+	{
+		if(buf == 0) line_note[buf++] = line_place[i] - 1;
+		else line_note[buf++] = line_place[i] - line_place[i - 1] - 1;
+	}
+
+	for (int i = 0; i < line; i++)
+	{
+		cout << line_place[i] << '/';
+		cout << line_note[i] << endl;
+	}
+
+	char input_character = NULL;
+	char temp_note[100];
+	int count = 0;
+	int check = 1;
+	for (int i = 0; i < line; i++)
+	{
+	
+			for (int j = 0; j < line_note[i]+1; j++)
+			{
+				if(i ==0) playsound(rep_notes[j]);
+				else playsound(rep_notes[j + line_place[i-1]+1]);
+				Sleep(500);
+			}
+
+			for (int k = 0; k < line_note[i]+1; k++)
+			{
+				input_character = (char)_getch();
+				temp_note[k] = input_character;
+				playsound(temp_note[k]);
+				Sleep(500);
+			}
+
+			for (int z = 0; z < line_note[i]+1; z++)
+			{
+				if (rep_notes[z] != temp_note[z])
+				{
+					count++;
+					Sleep(300);
+				}
+			}
+
+			if (count == 0)
+			{
+				msystem->playSound(msound[13], 0, false, NULL);
+				Sleep(600);
+				
+			}
+			else
+			{
+				count = 0;
+				msystem->playSound(msound[14], 0, false, NULL);
+				Sleep(300);
+			}
+		
+
+	}
+	
 
 
 
