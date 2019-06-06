@@ -20,25 +20,6 @@ void cvt_to_gray(Mat input_img, Mat output_img) { //그레이스케일로 변환
 	}
 }
 
-void find_line(Mat input_img, Mat img_binary, int limit, int line[], int lineNum) { //오선 위치 추출
-	for (int y = 0; y < input_img.rows; y++) {
-		uchar* pointer_input = img_binary.ptr<uchar>(y);
-
-		int cnt = 0;
-
-		for (int x = 0; x < input_img.cols; x++) {
-			int temp = pointer_input[x];
-			if (temp == 0) cnt++; //한 가로 줄에서 값이 255인 픽셀 개수 세기
-		}
-
-		if (cnt >= limit) { //오선 위치 추가
-			line[lineNum] = y;
-			lineNum++;
-		}
-	}
-	line[lineNum] = input_img.rows - 1;
-}
-
 
 int cal_interval(int line[], int lineNum) { //선 사이 평균 간격 구하기	
 	bool first_interval = true;
@@ -63,7 +44,92 @@ int cal_interval(int line[], int lineNum) { //선 사이 평균 간격 구하기
 	return sum_line_interval / 4;
 }
 
-void print_line(Mat input_img, Mat img_binary, Mat line_img, int lineNum, int line[]) { //오선 출력	
+
+void remove_noise(Mat img_new, Mat mask) { //노이즈 제거
+	erode(img_new, img_new, mask);
+	dilate(img_new, img_new, mask);
+	dilate(img_new, img_new, mask);
+	dilate(img_new, img_new, mask);
+	dilate(img_new, img_new, mask);
+	dilate(img_new, img_new, mask);
+	erode(img_new, img_new, mask);
+	erode(img_new, img_new, mask);
+	erode(img_new, img_new, mask);
+	erode(img_new, img_new, mask); //학교종, 비행기
+}
+
+
+void output_all(int nlabels, string point_string[]) {
+	ofstream out("1.txt");
+	out << nlabels - 1 - 2 << endl;
+	for (int x = 2; x < nlabels - 1; x++) {
+		out << point_string[x] << "250" << endl;
+	}
+	out << endl << "0";
+	out.close();
+}
+
+void output_part(int interval_position_count, string point_string[], int interval_position[], int nlabels) {
+	ofstream out2("2.txt");
+	interval_position_count = 0;
+	out2 << nlabels - 1 - 2 << endl;
+	for (int x = 2; x < nlabels - 1; x++) {
+		out2 << point_string[x] << "250" << endl;
+		if (x == interval_position[interval_position_count]) {
+			out2 << endl;
+			interval_position_count++;
+		}
+	}
+	out2 << endl << "0";
+
+	out2.close();
+}
+
+int main() {
+	Mat input_img = imread("비행기.png"); //원본 영상	
+	Mat img_gray = Mat(input_img.rows, input_img.cols, CV_8UC1); 
+	Mat img_binary = Mat(input_img.rows, input_img.cols, CV_8UC1);
+	Mat line_img = Mat(input_img.rows, input_img.cols, CV_8UC1);
+	Mat img_new = Mat(input_img.rows, input_img.cols, CV_8UC1);
+	Mat mask = getStructuringElement(CV_SHAPE_RECT, Size(2, 2));
+	Mat dstImage = Mat(input_img.rows, input_img.cols, CV_8UC1);
+	int nlabels = 0;
+	string point_string[999]; //추출한 음
+	int interval_position[99];
+	int interval_position_count = 0;
+	int limit = (int)((input_img.cols / 100.0) * 80);
+	int line[99999];
+	int lineNum = 0;
+	line[lineNum] = 0;
+	lineNum++;
+
+
+	cvt_to_gray(input_img, img_gray); //그레이스케일 
+	threshold(img_gray, img_binary, 127, 255, THRESH_OTSU); //이진화
+	
+															
+	//오선 위치 추출
+	for (int y = 0; y < input_img.rows; y++) {
+		uchar* pointer_input = img_binary.ptr<uchar>(y);
+
+		int cnt = 0;
+
+		for (int x = 0; x < input_img.cols; x++) {
+			int temp = pointer_input[x];
+			if (temp == 0) cnt++; //한 가로 줄에서 값이 255인 픽셀 개수 세기
+		}
+
+		if (cnt >= limit) { //오선 위치 추가
+			line[lineNum] = y;
+			lineNum++;
+		}
+	}
+	line[lineNum] = input_img.rows - 1;
+	int avg_interval = cal_interval(line, lineNum); //선 사이 평균 간격 구하기
+	cout << "평균 간격 : " << avg_interval << endl;
+	
+	
+	//오선 출력
 	int line_count = 0;
 	for (int y = 0; y < input_img.rows; y++) {
 		uchar* pointer_binary = img_binary.ptr<uchar>(y);
@@ -88,9 +154,9 @@ void print_line(Mat input_img, Mat img_binary, Mat line_img, int lineNum, int li
 			}
 		}
 	}
-}
 
-void remove_line(Mat input_img, Mat img_new, Mat img_binary, int line[], int avg_interval) { //오선 제거
+
+	//오선 제거
 	int lineTmp = 0;
 	int interval_count_tmp = 0;
 	int f_tmp = 0;
@@ -128,22 +194,11 @@ void remove_line(Mat input_img, Mat img_new, Mat img_binary, int line[], int avg
 			}
 		}
 	}
-}
 
-void remove_noise(Mat img_new, Mat mask) { //노이즈 제거
-	erode(img_new, img_new, mask);
-	dilate(img_new, img_new, mask);
-	dilate(img_new, img_new, mask);
-	dilate(img_new, img_new, mask);
-	dilate(img_new, img_new, mask);
-	dilate(img_new, img_new, mask);
-	erode(img_new, img_new, mask);
-	erode(img_new, img_new, mask);
-	erode(img_new, img_new, mask);
-	erode(img_new, img_new, mask); //학교종, 비행기
-}
 
-void find_position(Mat dstImage, Mat img_new, Mat input_img, int line[], int avg_interval, int lineNum, int nlabels, string point_string[], int interval_position[], int interval_position_count) {	
+
+	remove_noise(img_new, mask); //노이즈 제거
+	//find_position(dstImage, img_new, input_img, line, avg_interval, lineNum, nlabels, point_string, interval_position, interval_position_count);
 	Mat edge;
 	Canny(img_new, edge, 50, 150); //edge 검출
 	bitwise_not(edge, edge); //반전
@@ -157,7 +212,7 @@ void find_position(Mat dstImage, Mat img_new, Mat input_img, int line[], int avg
 	Mat labels, stats, centroids;
 	nlabels = connectedComponentsWithStats(edge, labels, stats, centroids, 8, CV_32S);
 	Point point_arr[999]; //추출한 음 좌표
-	
+
 	for (int i = 2; i < nlabels; i++) {
 		int area = stats.at<int>(i, CC_STAT_AREA);
 		int center_x = centroids.at<double>(i, 0);
@@ -236,61 +291,9 @@ void find_position(Mat dstImage, Mat img_new, Mat input_img, int line[], int avg
 		}
 		cout << endl;
 	}
-}
 
-void output_all(int nlabels, string point_string[]) {
-	ofstream out("1.txt");
-	out << nlabels - 1 - 2 << endl;
-	for (int x = 2; x < nlabels - 1; x++) {
-		out << point_string[x] << "250" << endl;
-	}
-	out << endl << "0";
-	out.close();
-}
 
-void output_part(int interval_position_count, string point_string[], int interval_position[], int nlabels) {
-	ofstream out2("2.txt");
-	interval_position_count = 0;
-	out2 << nlabels - 1 - 2 << endl;
-	for (int x = 2; x < nlabels - 1; x++) {
-		out2 << point_string[x] << "250" << endl;
-		if (x == interval_position[interval_position_count]) {
-			out2 << endl;
-			interval_position_count++;
-		}
-	}
-	out2 << endl << "0";
 
-	out2.close();
-}
-
-int main() {
-	Mat input_img = imread("비행기.png"); //원본 영상	
-	Mat img_gray = Mat(input_img.rows, input_img.cols, CV_8UC1); 
-	Mat img_binary = Mat(input_img.rows, input_img.cols, CV_8UC1);
-	Mat line_img = Mat(input_img.rows, input_img.cols, CV_8UC1);
-	Mat img_new = Mat(input_img.rows, input_img.cols, CV_8UC1);
-	Mat mask = getStructuringElement(CV_SHAPE_RECT, Size(2, 2));
-	Mat dstImage;
-	int nlabels;
-	string point_string[999]; //추출한 음
-	int interval_position[99];
-	int interval_position_count = 0;
-	int limit = (int)((input_img.cols / 100.0) * 80);
-	int line[99999];
-	int lineNum = 0;
-	line[lineNum] = 0;
-	lineNum++;
-
-	cvt_to_gray(input_img, img_gray); //그레이스케일 
-	threshold(img_gray, img_binary, 127, 255, THRESH_OTSU); //이진화
-	find_line(input_img, img_binary, limit, line, lineNum); //오선 위치 추출
-	int avg_interval = cal_interval(line, lineNum); //선 사이 평균 간격 구하기
-	cout << "평균 간격 : " << avg_interval << endl;
-	print_line(input_img, img_binary, line_img, lineNum, line); //오선 출력
-	remove_line(input_img, img_new, img_binary, line, avg_interval); //오선 제거
-	remove_noise(img_new, mask); //노이즈 제거
-	find_position(dstImage, img_new, input_img, line, avg_interval, lineNum, nlabels, point_string, interval_position, interval_position_count);
 
 	output_all(nlabels, point_string);
 	output_part(interval_position_count, point_string, interval_position, nlabels);
