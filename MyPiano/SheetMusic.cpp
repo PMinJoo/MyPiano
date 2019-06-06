@@ -7,43 +7,23 @@ using namespace cv;
 using namespace std;
 
 
-Mat GS_threshold(Mat src_image, double thresh, int threshold_type) {
-	double max_value = 255.0;
-	if (threshold_type == cv::THRESH_BINARY || threshold_type == cv::THRESH_BINARY_INV)
-		max_value = thresh;
-	cv::Mat dst_image = cv::Mat(src_image.size(), src_image.type());
-	cv::threshold(src_image, dst_image, thresh, max_value, threshold_type);
-	return dst_image;
-}
 
-int main() {
-	Mat input_img = imread("비행기.png"); //원본 영상
-	//그레이스케일 영상
-	Mat img_gray = Mat(input_img.rows, input_img.cols, CV_8UC1); 
+void cvt_to_gray(Mat input_img, Mat output_img) { //그레이스케일로 변환
 	for (int y = 0; y < input_img.rows; y++) {
 		for (int x = 0; x < input_img.cols; x++) {
 			uchar blue = input_img.at<Vec3b>(y, x)[0];
 			uchar green = input_img.at<Vec3b>(y, x)[1];
 			uchar red = input_img.at<Vec3b>(y, x)[2];
-			uchar gray = (blue + green + red) / 3.0; 
-			img_gray.at<uchar>(y, x) = gray;
+			uchar gray = (blue + green + red) / 3.0;
+			output_img.at<uchar>(y, x) = gray;
 		}
 	}
+}
 
-	//이진 영상
-	Mat img_binary = Mat(input_img.rows, input_img.cols, CV_8UC1);
-	threshold(img_gray, img_binary, 127, 255, THRESH_OTSU);
-
-	int limit = (int)((input_img.cols / 100.0) * 80);
-	int line[99999];
-	int lineNum = 0;
-	line[lineNum] = 0;
-	lineNum++;
-	
-	//오선 위치 추출
+void find_line(Mat input_img, Mat img_binary, int limit, int line[], int lineNum) { //오선 위치 추출
 	for (int y = 0; y < input_img.rows; y++) {
 		uchar* pointer_input = img_binary.ptr<uchar>(y);
-		
+
 		int cnt = 0;
 
 		for (int x = 0; x < input_img.cols; x++) {
@@ -57,13 +37,13 @@ int main() {
 		}
 	}
 	line[lineNum] = input_img.rows - 1;
+}
 
 
-	//선 사이 평균 간격 구하기
+int cal_interval(int line[], int lineNum) { //선 사이 평균 간격 구하기	
 	bool first_interval = true;
 	int first_interval_loc = 0; //첫 번째 간격
 	int sum_line_interval = 0; //간격 합(평균을 구하기 위함)
-
 	for (int i = 2; i < lineNum; i++) {
 		int tmp_interval = line[i] - line[i - 1]; //선 사이 간격 계산
 
@@ -80,13 +60,10 @@ int main() {
 			sum_line_interval += tmp_interval;
 		}
 	}
-	int avg_interval = sum_line_interval / 4;
-	cout << "평균 간격 : " << avg_interval << endl;
+	return sum_line_interval / 4;
+}
 
-
-
-	//오선 출력
-	Mat line_img = Mat(input_img.rows, input_img.cols, CV_8UC1);
+void print_line(Mat input_img, Mat img_binary, Mat line_img, int lineNum, int line[]) { //오선 출력	
 	int line_count = 0;
 	for (int y = 0; y < input_img.rows; y++) {
 		uchar* pointer_binary = img_binary.ptr<uchar>(y);
@@ -111,10 +88,9 @@ int main() {
 			}
 		}
 	}
+}
 
-
-	//오선 제거
-	Mat img_new = Mat(input_img.rows, input_img.cols, CV_8UC1);
+void remove_line(Mat input_img, Mat img_new, Mat img_binary, int line[], int avg_interval) { //오선 제거
 	int lineTmp = 0;
 	int interval_count_tmp = 0;
 	int f_tmp = 0;
@@ -124,7 +100,7 @@ int main() {
 		f_tmp = interval_count_tmp % 5;
 
 
-		if (f_tmp==1 && line[lineTmp-1] + avg_interval+avg_interval/2 < y && y < line[lineTmp]- avg_interval+ avg_interval/2) {
+		if (f_tmp == 1 && line[lineTmp - 1] + avg_interval + avg_interval / 2 < y && y < line[lineTmp] - avg_interval + avg_interval / 2) {
 			for (int x = 0; x < input_img.cols; x++) {
 				switch (pointer_binary[x]) {
 				case 0:
@@ -152,10 +128,9 @@ int main() {
 			}
 		}
 	}
+}
 
-
-	//노이즈 제거
-	Mat mask = getStructuringElement(CV_SHAPE_RECT, Size(2, 2));
+void remove_noise(Mat img_new, Mat mask) { //노이즈 제거
 	erode(img_new, img_new, mask);
 	dilate(img_new, img_new, mask);
 	dilate(img_new, img_new, mask);
@@ -165,11 +140,10 @@ int main() {
 	erode(img_new, img_new, mask);
 	erode(img_new, img_new, mask);
 	erode(img_new, img_new, mask);
-	erode(img_new, img_new, mask); //학교종
-	
+	erode(img_new, img_new, mask); //학교종, 비행기
+}
 
-
-	Mat dstImage;
+void find_position(Mat dstImage, Mat img_new, Mat input_img, int line[], int avg_interval, int lineNum, int nlabels, string point_string[], int interval_position[], int interval_position_count) {	
 	Mat edge;
 	Canny(img_new, edge, 50, 150); //edge 검출
 	bitwise_not(edge, edge); //반전
@@ -181,10 +155,9 @@ int main() {
 	cvtColor(edge, dstImage, COLOR_GRAY2BGR);
 
 	Mat labels, stats, centroids;
-	int nlabels = connectedComponentsWithStats(edge, labels, stats, centroids, 8, CV_32S);
+	nlabels = connectedComponentsWithStats(edge, labels, stats, centroids, 8, CV_32S);
 	Point point_arr[999]; //추출한 음 좌표
-	string point_string[999]; //추출한 음
-	//int Point_position[999];
+	
 	for (int i = 2; i < nlabels; i++) {
 		int area = stats.at<int>(i, CC_STAT_AREA);
 		int center_x = centroids.at<double>(i, 0);
@@ -196,12 +169,10 @@ int main() {
 
 		rectangle(dstImage, Point(left, top), Point(left + width, top + height), Scalar(0, 0, 255), 1);
 		putText(dstImage, to_string(i), Point(left + 20, top + 20), FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 0, 0), 2);
-		
+
 		//cout << "음 추출 : " << i << " - (" << center_x << ", " << center_y << ")";
 		point_arr[i] = Point(center_x, center_y);
 	}
-
-
 
 	Point final_point_arr[999]; //음 좌표
 	final_point_arr[0].x = 0;
@@ -212,10 +183,8 @@ int main() {
 	int temp_y = 5;
 	Point x_min;
 	x_min.x = input_img.cols;
-	int interval_position[99];
-	int interval_position_count = 0;
 	for (int x = 2; x < nlabels; x++) {
-		if (point_arr[x].y > line[temp_x]+4 + avg_interval * 2) {
+		if (point_arr[x].y > line[temp_x] + 4 + avg_interval * 2) {
 			temp_x += 5;
 			temp_y += 5;
 			prv_temp_x += 5;
@@ -223,14 +192,14 @@ int main() {
 			interval_position[interval_position_count] = x - 1;
 			interval_position_count++;
 		}
-		
+
 		x_min.x = input_img.cols;
 		for (int y = 2; y < nlabels; y++) {
 			if (temp_point_x < point_arr[y].x && point_arr[y].x < x_min.x && line[prv_temp_x] + 4 + avg_interval * 2 < point_arr[y].y && point_arr[y].y <= line[temp_x] + 4 + avg_interval * 2) {
 				x_min = point_arr[y];
 			}
 			else if (point_arr[y].y > line[temp_y] + 4 + avg_interval * 2) {
-				
+
 				break;
 			}
 		}
@@ -259,7 +228,7 @@ int main() {
 				case 0: cout << "레"; point_string[x] = "s"; break;
 				}
 			}
-			else if (final_point_arr[x].y == line[l] +avg_interval + 4 || final_point_arr[x].y == line[l] + avg_interval + 5 || final_point_arr[x].y == line[l] + avg_interval + 3) {
+			else if (final_point_arr[x].y == line[l] + avg_interval + 4 || final_point_arr[x].y == line[l] + avg_interval + 5 || final_point_arr[x].y == line[l] + avg_interval + 3) {
 				if (l % 5 == 0) {
 					cout << "도"; point_string[x] = "a";
 				}
@@ -267,15 +236,19 @@ int main() {
 		}
 		cout << endl;
 	}
+}
 
+void output_all(int nlabels, string point_string[]) {
 	ofstream out("1.txt");
 	out << nlabels - 1 - 2 << endl;
-	for (int x = 2; x < nlabels-1; x++) {
+	for (int x = 2; x < nlabels - 1; x++) {
 		out << point_string[x] << "250" << endl;
 	}
 	out << endl << "0";
 	out.close();
+}
 
+void output_part(int interval_position_count, string point_string[], int interval_position[], int nlabels) {
 	ofstream out2("2.txt");
 	interval_position_count = 0;
 	out2 << nlabels - 1 - 2 << endl;
@@ -287,15 +260,45 @@ int main() {
 		}
 	}
 	out2 << endl << "0";
-	
+
 	out2.close();
+}
 
+int main() {
+	Mat input_img = imread("비행기.png"); //원본 영상	
+	Mat img_gray = Mat(input_img.rows, input_img.cols, CV_8UC1); 
+	Mat img_binary = Mat(input_img.rows, input_img.cols, CV_8UC1);
+	Mat line_img = Mat(input_img.rows, input_img.cols, CV_8UC1);
+	Mat img_new = Mat(input_img.rows, input_img.cols, CV_8UC1);
+	Mat mask = getStructuringElement(CV_SHAPE_RECT, Size(2, 2));
+	Mat dstImage;
+	int nlabels;
+	string point_string[999]; //추출한 음
+	int interval_position[99];
+	int interval_position_count = 0;
+	int limit = (int)((input_img.cols / 100.0) * 80);
+	int line[99999];
+	int lineNum = 0;
+	line[lineNum] = 0;
+	lineNum++;
 
+	cvt_to_gray(input_img, img_gray); //그레이스케일 
+	threshold(img_gray, img_binary, 127, 255, THRESH_OTSU); //이진화
+	find_line(input_img, img_binary, limit, line, lineNum); //오선 위치 추출
+	int avg_interval = cal_interval(line, lineNum); //선 사이 평균 간격 구하기
+	cout << "평균 간격 : " << avg_interval << endl;
+	print_line(input_img, img_binary, line_img, lineNum, line); //오선 출력
+	remove_line(input_img, img_new, img_binary, line, avg_interval); //오선 제거
+	remove_noise(img_new, mask); //노이즈 제거
+	find_position(dstImage, img_new, input_img, line, avg_interval, lineNum, nlabels, point_string, interval_position, interval_position_count);
+
+	output_all(nlabels, point_string);
+	output_part(interval_position_count, point_string, interval_position, nlabels);
 
 	cv::imshow("binary", img_binary);
 	cv::imshow("line", line_img);
 	cv::imshow("new", img_new);
-	cv::imshow("reeeesullllt", dstImage);
+	cv::imshow("result", dstImage);
 
 	cv::waitKey(0);
 	return 0;
